@@ -4,3 +4,4 @@ export * from './address.repository';
 export * from './emailsave.repository';
 export * from './charactersave.repository';
 export * from './twomobile.repository';
+export * from './routeform.repository';
