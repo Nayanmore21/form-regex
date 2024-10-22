@@ -22,16 +22,22 @@ export class Routeform extends Entity {
   lastName: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  phoneNumber: number;
+  phoneNumber: string;
 
   @property({
     type: 'date',
     required: true,
   })
   dob: Date;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  address: string;
 
 
   constructor(data?: Partial<Routeform>) {

@@ -24,13 +24,15 @@ const RouteForm = () => {
         firstName: "",
         lastName: "",
         phoneNumber: "",
-        dob: ''
+        dob: '',
+        address: '',
     });
     const [errors, setErrors] = useState({
         firstName: "",
         lastName: "",
         phoneNumber: "",
-        dob: ''
+        dob: '',
+        address: '',
     });
     const [isLoading, setLoading] = useState(false);
 
@@ -41,7 +43,8 @@ const RouteForm = () => {
             firstName: "",
             lastName: "",
             phoneNumber: "",
-            dob: ''
+            dob: '',
+            address: '',
         };
 
         // First Name Validation
@@ -90,7 +93,7 @@ const RouteForm = () => {
             // Ensure phoneNumber is a number before sending the data
             const dataToSave = {
                 ...regData,
-                phoneNumber: Number(regData.phoneNumber), // Convert phoneNumber to a number
+                // phoneNumber: parseInt(regData.phoneNumber), // Convert phoneNumber to a number
                 dob: new Date(regData.dob).toISOString(),
             };
 
@@ -100,7 +103,7 @@ const RouteForm = () => {
 
             await axios.post(`${apiUrl}/routeforms`, dataToSave);
 
-
+ 
             // setShowAlert(true); // Show success alert
 
             // Reset form fields and errors
@@ -108,13 +111,15 @@ const RouteForm = () => {
                 firstName: "",
                 lastName: "",
                 phoneNumber: "",
-                dob: ''
+                dob: '',
+                address: '',
             });
             setErrors({
                 firstName: "",
                 lastName: "",
                 phoneNumber: "",
                 dob: '',
+                address: '',
             });
 
             // Hide loading and alert after 3 seconds
@@ -155,19 +160,11 @@ const RouteForm = () => {
                 style={{ padding: "12px 0", borderRadius: 12 }}
                 className="RegPaper"
             >
-                <Grid xs={20} sm={20} md={20} className="head-bg">
-                    <h4 className="heading head">
-                        Save Form
-                    </h4>
-                </Grid>
-                <Divider
-                    sx={{ borderWidth: 1, borderColor: "black", margin: "10px 0" }}
-                />
                 <Box
                     component="form"
                     sx={{
                         "& .MuiTextField-root": { m: "0.1rem", width: "35ch" },
-                        "& .MuiInputBase-root": { height: 45 },
+
                         "& .MuiFormLabel-root": {
                             color: "#003590",
                             fontWeight: "600",
@@ -183,6 +180,12 @@ const RouteForm = () => {
                     noValidate
                     autoComplete="off"
                 >
+                    <h4 style={{
+                        marginBottom: '40px',
+                        textAlign: 'center',
+                    }}>
+                        Save form
+                    </h4>
                     <Row gutter={[32, 32]}>
                         <Col xl={6} md={6} sm={24} xs={24}>
                             <TextField
@@ -231,14 +234,31 @@ const RouteForm = () => {
                                 type="date"
                                 InputLabelProps={{ shrink: true }}
                                 style={{ width: "100%" }}
-                                value={regData.dob}  
+                                value={regData.dob}
                                 onChange={handleInputChange}
-                                name="dob"  
+                                name="dob"
                                 error={Boolean(errors.dob)}
                                 helperText={errors.dob}
                             />
                         </Col>
+                        <Col xl={6} md={6} sm={24} xs={24}>
+                            <TextField
+                                label='Address'
+                                required
+                                type="text"
+                                InputLabelProps={{ shrink: true }}
+                                style={{ width: "100%" }}
+                                value={regData.address}
+                                onChange={handleInputChange}
+                                name="address"
+                                error={Boolean(errors.address)}
+                                helperText={errors.address}
+                                multiline
+                                rows={3}
+                            />
+                        </Col>
                     </Row>
+
                 </Box>
                 <Stack
                     direction="row"
