@@ -12,12 +12,15 @@ import {
     FormControlLabel,
     Radio,
     Autocomplete,
+    Tooltip,
+    Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { Container } from "react-bootstrap";
-import { Col, Row, Table } from "antd";
+import { Col, Row, Space, Table } from "antd";
 import axios from "axios";
 import { apiUrl } from "../Config";
+import { CloseCircleFilled, EyeFilled } from "@ant-design/icons";
 
 
 const RouteForm = () => {
@@ -41,6 +44,23 @@ const RouteForm = () => {
     ];
 
     const columns = [
+        {
+            title: 'Action',
+            key: 'action',
+            width: 150,
+            render: (text, record) => (
+                <Space size="middle">
+                    <Tooltip title={<Typography style={{ fontSize: 14 }}>Update Data</Typography>} placement='left-start'>
+                        <EyeFilled onClick={() => handleEdit(record.id)} style={{ cursor: 'pointer', fontSize: 15 }} />
+                    </Tooltip>
+                    <Tooltip title={<Typography style={{ fontSize: 14 }}>Delete Data</Typography>} placement='right-start'>
+                        <CloseCircleFilled onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(record.id);
+                        }} style={{ cursor: 'pointer', color: '#ff0000', fontSize: 15 }} />
+                    </Tooltip>
+                </Space>)
+        },
         {
             title: 'First Name',
             dataIndex: 'firstName',
@@ -95,24 +115,10 @@ const RouteForm = () => {
             dataIndex: 'country',
             key: 'country',
             width: 150
-        },
-        {
-            title: 'Action',
-            key: 'action',
-            render: (text, record) => (
-                <Space size="middle">
-                    <Tooltip title={<Typography style={{ fontSize: 14 }}>Update Data</Typography>} placement='left-start'>
-                        <EyeFilled onClick={() => handleEdit(record.pay_id)} style={{ cursor: 'pointer', fontSize: 23 }} />
-                    </Tooltip>
-                    <Tooltip title={<Typography style={{ fontSize: 14 }}>Delete Data</Typography>} placement='right-start'>
-                        <CloseCircleFilled onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(record.pay_id);
-                        }} style={{ cursor: 'pointer', color: '#ff0000', fontSize: 20 }} />
-                    </Tooltip>
-                </Space>)
-        },
+        }
+
     ]
+
     const [regData, setRegData] = useState({
         firstName: "",
         lastName: "",
@@ -122,7 +128,7 @@ const RouteForm = () => {
         gender: '',
         email: '',
         password: '',
-        country: null,  // Changed to null to properly handle initial state
+        country: null,
     });
 
     const [errors, setErrors] = useState({
@@ -139,6 +145,8 @@ const RouteForm = () => {
 
     const [tabledata, setTabledata] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const [editId, setEditId] = useState(null);
 
     const validateFields = () => {
         let valid = true;
@@ -225,20 +233,61 @@ const RouteForm = () => {
         return valid;
     };
 
+    const getData = async () => {
+        try {
+            const res = await axios.get(`${apiUrl}/routeforms`);
+            console.log(res.data);
+            setLoading(false);
+            setTabledata(res.data);
+            console.log(tabledata);
+        } catch (error) {
+            console.log('Error occurred during fetching data:', error);
+        }
+    }
+
+    const handleEdit = async (id) => {
+        try {
+            const res = await axios.get(`${apiUrl}/routeforms/${id}`);
+            const data = res.data;
+
+            setRegData({
+                firstName: data.firstName,
+                lastName: data.lastName,
+                phoneNumber: data.phoneNumber,
+                dob: data.dob,
+                address: data.address,
+                gender: data.gender,
+                email: data.email,
+                password: data.password,
+                country: countries.find(country => country.value === data.country),
+            })
+            setEditId(id)
+        } catch (error) {
+            console.log('Error Occurred during fetching data:', error);
+        }
+
+    }
+
     const handleSave = async () => {
         if (!validateFields()) {
             return;
         }
 
+        const dataToSave = {
+            ...regData,
+            dob: new Date(regData.dob).toISOString(),
+            country: regData.country.value
+        };
         try {
-            const dataToSave = {
-                ...regData,
-                dob: new Date(regData.dob).toISOString(),
-                country: regData.country.value
-            };
+            if (editId) {
+                await axios.put(`${apiUrl}/routeforms/${editId}`, dataToSave);
+                setEditId(null);
 
-            console.log('Data being sent:', dataToSave);
-            await axios.post(`${apiUrl}/routeforms`, dataToSave);
+            } else {
+                console.log('Data being sent:', dataToSave);
+                await axios.post(`${apiUrl}/routeforms`, dataToSave);
+            }
+
 
             // Reset form after successful submission
             setRegData({
@@ -263,6 +312,7 @@ const RouteForm = () => {
                 password: '',
                 country: '',
             });
+            getData();
         } catch (error) {
             console.log('Error saving data:', error.response?.data || error);
         }
@@ -294,17 +344,6 @@ const RouteForm = () => {
         }
     };
 
-    const getData = async () => {
-        try {
-            const res = await axios.get(`${apiUrl}/routeforms`);
-            console.log(res.data);
-            setLoading(false);
-            setTabledata(res.data);
-            console.log(tabledata);
-        } catch (error) {
-            console.log('Error occurred during fetching data:', error);
-        }
-    }
 
     useEffect(() => {
         getData();
