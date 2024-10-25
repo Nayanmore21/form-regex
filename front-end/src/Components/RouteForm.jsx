@@ -6,37 +6,140 @@ import {
     Stack,
     TextField,
     Grid,
+    FormControl,
+    FormLabel,
+    RadioGroup,
+    FormControlLabel,
+    Radio,
+    Autocomplete,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Container } from "react-bootstrap";
-import { Col, Row } from "antd";
-import SaveIcon from "@mui/icons-material/Save";
+import { Col, Row, Table } from "antd";
 import axios from "axios";
 import { apiUrl } from "../Config";
 
 
-import CircularProgress from "@mui/material/CircularProgress";
-
 const RouteForm = () => {
 
+    const countries = [
+        {
+            cid: 0,
+            country: 'India',
+            value: 'india'
+        },
+        {
+            cid: 1,
+            country: 'US',
+            value: 'us'
+        },
+        {
+            cid: 2,
+            country: 'UK',
+            value: 'uk'
+        },
+    ];
 
+    const columns = [
+        {
+            title: 'First Name',
+            dataIndex: 'firstName',
+            key: 'first_name',
+            width: 150
+        },
+        {
+            title: 'Last Name',
+            dataIndex: 'lastName',
+            key: 'last_name',
+            width: 150
+        },
+        {
+            title: 'Phone Number',
+            dataIndex: 'phoneNumber',
+            key: 'phone_number',
+            width: 150
+        },
+        {
+            title: 'Date of Birth',
+            dataIndex: 'dob',
+            key: 'dob',
+            width: 150,
+            render: (text) => new Date(text).toLocaleDateString()
+        },
+        {
+            title: 'Address',
+            dataIndex: 'address',
+            key: 'address',
+            width: 150
+        },
+        {
+            title: 'Gender',
+            dataIndex: 'gender',
+            key: 'gender',
+            width: 150
+        },
+        {
+            title: 'Email',
+            dataIndex: 'email',
+            key: 'email',
+            width: 150
+        },
+        {
+            title: 'Password',
+            dataIndex: 'password',
+            key: 'password',
+            width: 150
+        },
+        {
+            title: 'Country',
+            dataIndex: 'country',
+            key: 'country',
+            width: 150
+        },
+        {
+            title: 'Action',
+            key: 'action',
+            render: (text, record) => (
+                <Space size="middle">
+                    <Tooltip title={<Typography style={{ fontSize: 14 }}>Update Data</Typography>} placement='left-start'>
+                        <EyeFilled onClick={() => handleEdit(record.pay_id)} style={{ cursor: 'pointer', fontSize: 23 }} />
+                    </Tooltip>
+                    <Tooltip title={<Typography style={{ fontSize: 14 }}>Delete Data</Typography>} placement='right-start'>
+                        <CloseCircleFilled onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(record.pay_id);
+                        }} style={{ cursor: 'pointer', color: '#ff0000', fontSize: 20 }} />
+                    </Tooltip>
+                </Space>)
+        },
+    ]
     const [regData, setRegData] = useState({
         firstName: "",
         lastName: "",
         phoneNumber: "",
         dob: '',
         address: '',
+        gender: '',
+        email: '',
+        password: '',
+        country: null,  // Changed to null to properly handle initial state
     });
+
     const [errors, setErrors] = useState({
         firstName: "",
         lastName: "",
         phoneNumber: "",
         dob: '',
         address: '',
+        gender: '',
+        email: '',
+        password: '',
+        country: '',
     });
-    const [isLoading, setLoading] = useState(false);
 
-    //======================= || Data Validation Start || =================================
+    const [tabledata, setTabledata] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const validateFields = () => {
         let valid = true;
         let newErrors = {
@@ -45,9 +148,13 @@ const RouteForm = () => {
             phoneNumber: "",
             dob: '',
             address: '',
+            gender: '',
+            email: '',
+            password: '',
+            country: '',
         };
 
-        // First Name Validation
+        // Existing validations...
         if (!regData.firstName) {
             newErrors.firstName = "First Name is required";
             valid = false;
@@ -56,7 +163,6 @@ const RouteForm = () => {
             valid = false;
         }
 
-        // Last Name Validation
         if (!regData.lastName) {
             newErrors.lastName = "Last Name is required";
             valid = false;
@@ -65,7 +171,6 @@ const RouteForm = () => {
             valid = false;
         }
 
-        // Phone Number Validation
         if (!regData.phoneNumber) {
             newErrors.phoneNumber = "Phone Number is required";
             valid = false;
@@ -74,45 +179,78 @@ const RouteForm = () => {
             valid = false;
         }
 
+        if (!regData.email) {
+            newErrors.email = "Email is required";
+            valid = false;
+        } else {
+            const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            if (!emailRegex.test(regData.email.toLowerCase())) {
+                newErrors.email = "Please enter a valid email address";
+                valid = false;
+            }
+        }
+
+        if (!regData.password) {
+            newErrors.password = "Password is required";
+            valid = false;
+        } else {
+            const passwordLength = regData.password.length == 8;
+            const hasUpperCase = /[A-Z]/.test(regData.password);
+            const hasLowerCase = /[a-z]/.test(regData.password);
+            const hasNumbers = /\d/.test(regData.password);
+            const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(regData.password);
+
+            if (!passwordLength || !hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+                let passwordError = "Password must contain:";
+                if (!passwordLength) passwordError += "\n- Exactly 8 characters";
+                if (!hasUpperCase) passwordError += "\n- At least 1 uppercase letter";
+                if (!hasLowerCase) passwordError += "\n- At least 1 lowercase letter";
+                if (!hasNumbers) passwordError += "\n- At least 1 number";
+                if (!hasSpecialChar) passwordError += "\n- At least 1 special character";
+
+                newErrors.password = passwordError;
+                valid = false;
+            } else {
+                newErrors.password = "";
+                valid = true;
+            }
+        }
+
+        if (!regData.country) {
+            newErrors.country = "Country is required";
+            valid = false;
+        }
 
         setErrors(newErrors);
         return valid;
     };
-    //======================= || Data Validation End || =================================
-
-    //======================= || Data Post/Put Start || =================================
 
     const handleSave = async () => {
         if (!validateFields()) {
-            return; // If validation fails, don't proceed with saving
+            return;
         }
 
         try {
-            // setLoading(true);
-
-            // Ensure phoneNumber is a number before sending the data
             const dataToSave = {
                 ...regData,
-                // phoneNumber: parseInt(regData.phoneNumber), // Convert phoneNumber to a number
                 dob: new Date(regData.dob).toISOString(),
+                country: regData.country.value
             };
 
-            // POST request to create a new entry
-            console.log(dataToSave); // Log the data you're sending
-            console.log(`${apiUrl}/routeforms`); // Log the full URL
-
+            console.log('Data being sent:', dataToSave);
             await axios.post(`${apiUrl}/routeforms`, dataToSave);
 
- 
-            // setShowAlert(true); // Show success alert
-
-            // Reset form fields and errors
+            // Reset form after successful submission
             setRegData({
                 firstName: "",
                 lastName: "",
                 phoneNumber: "",
                 dob: '',
                 address: '',
+                gender: '',
+                email: '',
+                password: '',
+                country: null,
             });
             setErrors({
                 firstName: "",
@@ -120,39 +258,59 @@ const RouteForm = () => {
                 phoneNumber: "",
                 dob: '',
                 address: '',
+                gender: '',
+                email: '',
+                password: '',
+                country: '',
             });
-
-            // Hide loading and alert after 3 seconds
-            // setTimeout(() => {
-            //     setLoading(false);
-            //     setShowAlert(false);
-            // }, 3000);
         } catch (error) {
-            console.log(error);
-            // console.error(
-
-            //     "Error in handleSave:",
-            //     error.response ? error.response.data : error.message
-            // );
-            // setShowAlerterror(true); // Show error alert
+            console.log('Error saving data:', error.response?.data || error);
         }
     };
 
-    //======================= || Data Post/Put End || =================================
-
-    //======================= || Input OnChange Start || =================================
     const handleInputChange = (e) => {
         const { name, value } = e.target;
 
-        // For Phone Number: Only allow numbers and limit to 10 digits
         if (name === "phoneNumber" && (!/^\d*$/.test(value) || value.length > 10)) {
-            return; // Prevent input if not numeric or more than 10 digits
+            return;
         }
 
         setRegData({ ...regData, [name]: value });
     };
-    //======================= || Input OnChange End || =================================
 
+    // Updated country change handler
+    const handleCountryChange = (event, newValue) => {
+        setRegData({
+            ...regData,
+            country: newValue  // Store the entire country object
+        });
+
+        // Clear country error if a value is selected
+        if (newValue) {
+            setErrors(prev => ({
+                ...prev,
+                country: ''
+            }));
+        }
+    };
+
+    const getData = async () => {
+        try {
+            const res = await axios.get(`${apiUrl}/routeforms`);
+            console.log(res.data);
+            setLoading(false);
+            setTabledata(res.data);
+            console.log(tabledata);
+        } catch (error) {
+            console.log('Error occurred during fetching data:', error);
+        }
+    }
+
+    useEffect(() => {
+        getData();
+    }, []);
+
+    //======================= || Input OnChange End || =================================    
     return (
         <Container fluid className="mt-3 my-5 mainpaper myForm ">
             <Paper
@@ -215,6 +373,40 @@ const RouteForm = () => {
                         </Col>
                         <Col xl={6} md={6} sm={24} xs={24}>
                             <TextField
+                                label="DOB"
+                                required
+                                type="date"
+                                InputLabelProps={{ shrink: true }}
+                                style={{ width: "100%" }}
+                                value={regData.dob}
+                                onChange={handleInputChange}
+                                name="dob"
+                                error={Boolean(errors.dob)}
+                                helperText={errors.dob}
+                            />
+                        </Col>
+                        <Col xl={6} md={6} sm={24} xs={24}>
+                            <FormControl>
+                                <FormLabel sx={{
+                                    fontSize: '10px'
+                                }} >Gender</FormLabel>
+                                <RadioGroup
+                                    defaultValue="female"
+                                    name="gender"
+                                    value={regData.gender}
+                                    onChange={handleInputChange}
+                                    error={Boolean(errors.gender)}
+                                    helperText={errors.gender}
+                                    row
+                                >
+                                    <FormControlLabel value="female" control={<Radio />} label="Female" />
+                                    <FormControlLabel value="male" control={<Radio />} label="Male" />
+                                    <FormControlLabel value="other" control={<Radio />} label="Other" />
+                                </RadioGroup>
+                            </FormControl>
+                        </Col>
+                        <Col xl={6} md={6} sm={24} xs={24}>
+                            <TextField
                                 label="Phone Number"
                                 required
                                 type="text"
@@ -229,16 +421,52 @@ const RouteForm = () => {
                         </Col>
                         <Col xl={6} md={6} sm={24} xs={24}>
                             <TextField
-                                label="DOB"
+                                label="Email Address"
                                 required
-                                type="date"
+                                type="email"
                                 InputLabelProps={{ shrink: true }}
                                 style={{ width: "100%" }}
-                                value={regData.dob}
+                                value={regData.email}
                                 onChange={handleInputChange}
-                                name="dob"
-                                error={Boolean(errors.dob)}
-                                helperText={errors.dob}
+                                name="email"
+                                error={Boolean(errors.email)}
+                                helperText={errors.email}
+                            />
+                        </Col>
+                        <Col xl={6} md={6} sm={24} xs={24}>
+                            <TextField
+                                label="Password"
+                                required
+                                type="password"
+                                InputLabelProps={{ shrink: true }}
+                                style={{ width: "100%" }}
+                                value={regData.password}
+                                onChange={handleInputChange}
+                                name="password"
+                                error={Boolean(errors.password)}
+                                helperText={errors.password}
+                            />
+                        </Col>
+                        <Col xl={6} md={6} sm={24} xs={24}>
+                            <Autocomplete
+                                options={countries}
+                                getOptionLabel={(option) => option?.country || ''}
+                                onChange={handleCountryChange}
+                                value={regData.country}
+                                isOptionEqualToValue={(option, value) => option.value === value?.value}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Country"
+                                        required
+                                        name="country"
+                                        InputLabelProps={{ shrink: true }}
+                                        placeholder="--Select--"
+                                        error={Boolean(errors.country)}
+                                        helperText={errors.country}
+                                        style={{ width: '100%' }}
+                                    />
+                                )}
                             />
                         </Col>
                         <Col xl={6} md={6} sm={24} xs={24}>
@@ -273,9 +501,18 @@ const RouteForm = () => {
                     >
                         Save
                     </Button>
-
-
                 </Stack>
+                <Table
+                    dataSource={tabledata}
+                    columns={columns}
+                    loading={loading}
+                    pagination={{ pageSize: 50 }}
+                    scroll={{ y: 240 }}
+                    style={{
+                        margin: '10px',
+                        padding: '20px'
+                    }}
+                />
             </Paper>
         </Container>
     );

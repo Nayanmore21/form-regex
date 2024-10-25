@@ -39,6 +39,30 @@ export class Routeform extends Entity {
   })
   address: string;
 
+  @property({
+    type: 'string',
+    required: true,
+  })
+  gender: string;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  email: string;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  password: string;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  country: string;
+
 
   constructor(data?: Partial<Routeform>) {
     super(data);
