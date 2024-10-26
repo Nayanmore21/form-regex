@@ -17,14 +17,12 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { Container } from "react-bootstrap";
-import { Col, notification, Row, Space, Table } from "antd";
+import { Col, notification, Row} from "antd";
 import axios from "axios";
 import { apiUrl } from "../Config";
-import { CloseCircleFilled, EyeFilled } from "@ant-design/icons";
-
+import { useNavigate } from "react-router-dom";
 
 const RouteForm = () => {
-
     const countries = [
         {
             cid: 0,
@@ -42,82 +40,6 @@ const RouteForm = () => {
             value: 'uk'
         },
     ];
-
-    const columns = [
-        {
-            title: 'Action',
-            key: 'action',
-            width: 150,
-            render: (text, record) => (
-                <Space size="middle">
-                    <Tooltip title={<Typography style={{ fontSize: 14 }}>Update Data</Typography>} placement='left-start'>
-                        <EyeFilled onClick={() => handleEdit(record.id)} style={{ cursor: 'pointer', fontSize: 15 }} />
-                    </Tooltip>
-                    <Tooltip title={<Typography style={{ fontSize: 14 }}>Delete Data</Typography>} placement='right-start'>
-                        <CloseCircleFilled onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(record.id);
-                        }} style={{ cursor: 'pointer', color: '#ff0000', fontSize: 15 }} />
-                    </Tooltip>
-                </Space>)
-        },
-        {
-            title: 'First Name',
-            dataIndex: 'firstName',
-            key: 'first_name',
-            width: 150
-        },
-        {
-            title: 'Last Name',
-            dataIndex: 'lastName',
-            key: 'last_name',
-            width: 150
-        },
-        {
-            title: 'Phone Number',
-            dataIndex: 'phoneNumber',
-            key: 'phone_number',
-            width: 150
-        },
-        {
-            title: 'Date of Birth',
-            dataIndex: 'dob',
-            key: 'dob',
-            width: 150,
-            render: (text) => new Date(text).toLocaleDateString()
-        },
-        {
-            title: 'Address',
-            dataIndex: 'address',
-            key: 'address',
-            width: 150
-        },
-        {
-            title: 'Gender',
-            dataIndex: 'gender',
-            key: 'gender',
-            width: 150
-        },
-        {
-            title: 'Email',
-            dataIndex: 'email',
-            key: 'email',
-            width: 150
-        },
-        {
-            title: 'Password',
-            dataIndex: 'password',
-            key: 'password',
-            width: 150
-        },
-        {
-            title: 'Country',
-            dataIndex: 'country',
-            key: 'country',
-            width: 150
-        }
-
-    ]
 
     const [regData, setRegData] = useState({
         firstName: "",
@@ -143,10 +65,11 @@ const RouteForm = () => {
         country: '',
     });
 
-    const [tabledata, setTabledata] = useState([]);
-    const [loading, setLoading] = useState(true);
+    // const [tabledata, setTabledata] = useState([]);
+    // const [loading, setLoading] = useState(true);
 
     const [editId, setEditId] = useState(null);
+    const navigate = useNavigate();
 
     const validateFields = () => {
         let valid = true;
@@ -233,18 +156,6 @@ const RouteForm = () => {
         return valid;
     };
 
-    const getData = async () => {
-        try {
-            const res = await axios.get(`${apiUrl}/routeforms`);
-            console.log(res.data);
-            setLoading(false);
-            setTabledata(res.data);
-            console.log(tabledata);
-        } catch (error) {
-            console.log('Error occurred during fetching data:', error);
-        }
-    }
-
     const handleEdit = async (id) => {
         try {
             const res = await axios.get(`${apiUrl}/routeforms/${id}`);
@@ -288,8 +199,6 @@ const RouteForm = () => {
                     });
                 }
                 setEditId(null);
-
-
             } else {
                 console.log('Data being sent:', dataToSave);
                 const res = await axios.post(`${apiUrl}/routeforms`, dataToSave);
@@ -392,10 +301,9 @@ const RouteForm = () => {
         }
     };
 
-
-    useEffect(() => {
-        getData();
-    }, []);
+    const handleDetail = () =>{
+        navigate('/routetable');
+    }
 
     //======================= || Input OnChange End || =================================    
     return (
@@ -588,18 +496,15 @@ const RouteForm = () => {
                     >
                         Save
                     </Button>
+                    <Button
+                        variant='contained'
+                        color="success"
+                        size="medium"
+                        onClick={handleDetail}
+                    >
+                        Details
+                    </Button>
                 </Stack>
-                <Table
-                    dataSource={tabledata}
-                    columns={columns}
-                    loading={loading}
-                    pagination={{ pageSize: 50 }}
-                    scroll={{ y: 240 }}
-                    style={{
-                        margin: '10px',
-                        padding: '20px'
-                    }}
-                />
             </Paper>
         </Container>
     );
