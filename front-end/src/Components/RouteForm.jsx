@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { Container } from "react-bootstrap";
-import { Col, Row, Space, Table } from "antd";
+import { Col, notification, Row, Space, Table } from "antd";
 import axios from "axios";
 import { apiUrl } from "../Config";
 import { CloseCircleFilled, EyeFilled } from "@ant-design/icons";
@@ -280,16 +280,27 @@ const RouteForm = () => {
         };
         try {
             if (editId) {
-                await axios.put(`${apiUrl}/routeforms/${editId}`, dataToSave);
+                const res = await axios.put(`${apiUrl}/routeforms/${editId}`, dataToSave);
+                if (res.status === 200) {
+                    notification.success({
+                        message: 'Success',
+                        description: 'Record edited successfully',
+                    });
+                }
                 setEditId(null);
+
 
             } else {
                 console.log('Data being sent:', dataToSave);
-                await axios.post(`${apiUrl}/routeforms`, dataToSave);
+                const res = await axios.post(`${apiUrl}/routeforms`, dataToSave);
+                if (res.status === 200) {
+                    notification.success({
+                        message: 'Success',
+                        description: 'Record saved successfully',
+                    });
+                }
             }
 
-
-            // Reset form after successful submission
             setRegData({
                 firstName: "",
                 lastName: "",
@@ -317,6 +328,43 @@ const RouteForm = () => {
             console.log('Error saving data:', error.response?.data || error);
         }
     };
+
+    const handleDelete = async (id) => {
+        try {
+            const res = await axios.delete(`${apiUrl}/routeforms/${id}`);
+
+            if (res.status === 204) {
+                setTabledata(prevData => prevData.filter(item => item.id !== id));
+
+                if (editId === id) {
+                    setEditId(null);
+                    setRegData({
+                        firstName: "",
+                        lastName: "",
+                        phoneNumber: "",
+                        dob: "",
+                        address: "",
+                        gender: "",
+                        email: "",
+                        password: "",
+                        country: null,
+                    });
+                }
+
+                notification.success({
+                    message: 'Success',
+                    description: 'Record deleted successfully',
+                });
+            }
+        } catch (error) {
+            console.log('Error occurred during deletion:', error);
+            notification.error({
+                message: 'Error',
+                description: 'Failed to delete record',
+            });
+        }
+
+    }
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
