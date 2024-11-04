@@ -17,29 +17,14 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { Container } from "react-bootstrap";
-import { Col, notification, Row} from "antd";
+import { Col, notification, Row } from "antd";
 import axios from "axios";
 import { apiUrl } from "../Config";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const RouteForm = () => {
-    const countries = [
-        {
-            cid: 0,
-            country: 'India',
-            value: 'india'
-        },
-        {
-            cid: 1,
-            country: 'US',
-            value: 'us'
-        },
-        {
-            cid: 2,
-            country: 'UK',
-            value: 'uk'
-        },
-    ];
+    const { id } = useParams();
+    const isEditing = !!id;
 
     const [regData, setRegData] = useState({
         firstName: "",
@@ -52,6 +37,7 @@ const RouteForm = () => {
         password: '',
         country: null,
     });
+    const [country, setCountry] = useState([]);
 
     const [errors, setErrors] = useState({
         firstName: "",
@@ -85,7 +71,6 @@ const RouteForm = () => {
             country: '',
         };
 
-        // Existing validations...
         if (!regData.firstName) {
             newErrors.firstName = "First Name is required";
             valid = false;
@@ -156,28 +141,36 @@ const RouteForm = () => {
         return valid;
     };
 
-    const handleEdit = async (id) => {
-        try {
-            const res = await axios.get(`${apiUrl}/routeforms/${id}`);
-            const data = res.data;
-
-            setRegData({
-                firstName: data.firstName,
-                lastName: data.lastName,
-                phoneNumber: data.phoneNumber,
-                dob: data.dob,
-                address: data.address,
-                gender: data.gender,
-                email: data.email,
-                password: data.password,
-                country: countries.find(country => country.value === data.country),
-            })
-            setEditId(id)
-        } catch (error) {
-            console.log('Error Occurred during fetching data:', error);
+    useEffect(() => {
+        const fetchCountry = async () => {
+            try {
+                const res = await axios.get(`${apiUrl}/countries`);
+                setCountry(res.data);
+            } catch (error) {
+                console.log('Error occurred during fetching data:', error);
+            }
         }
+        fetchCountry();
 
-    }
+    }, [])
+
+    useEffect(() => {
+        if (isEditing && id) {  // Check if id is truthy
+            setEditId(id);
+            const fetchEdit = async () => {
+                try {
+                    const response = await axios.get(`${apiUrl}/routeforms/${id}`);
+                    const fetchData = response.data;
+                    console.log("Fetched data:", response);
+                    setRegData({ ...fetchData });
+                } catch (error) {
+                    console.log('Error occurred during fetching data:', error);
+                }
+            };
+            fetchEdit();
+        }
+    }, [isEditing, id])
+
 
     const handleSave = async () => {
         if (!validateFields()) {
@@ -186,94 +179,76 @@ const RouteForm = () => {
 
         const dataToSave = {
             ...regData,
-            dob: new Date(regData.dob).toISOString(),
-            country: regData.country.value
+            dob: regData.dob ? new Date(regData.dob).toISOString() : '',
+            country: regData.country ? regData.country.countryName : ''
         };
         try {
-            if (editId) {
-                const res = await axios.put(`${apiUrl}/routeforms/${editId}`, dataToSave);
-                if (res.status === 200) {
-                    notification.success({
-                        message: 'Success',
-                        description: 'Record edited successfully',
-                    });
-                }
-                setEditId(null);
-            } else {
-                console.log('Data being sent:', dataToSave);
-                const res = await axios.post(`${apiUrl}/routeforms`, dataToSave);
-                if (res.status === 200) {
-                    notification.success({
-                        message: 'Success',
-                        description: 'Record saved successfully',
-                    });
-                }
-            }
+            console.log("DATA : ",dataToSave);
+            const res = isEditing && editId
+                ? await axios.put(`${apiUrl}/routeforms/${editId}`, dataToSave)
+                : await axios.post(`${apiUrl}/routeforms`, dataToSave);
 
-            setRegData({
-                firstName: "",
-                lastName: "",
-                phoneNumber: "",
-                dob: '',
-                address: '',
-                gender: '',
-                email: '',
-                password: '',
-                country: null,
-            });
-            setErrors({
-                firstName: "",
-                lastName: "",
-                phoneNumber: "",
-                dob: '',
-                address: '',
-                gender: '',
-                email: '',
-                password: '',
-                country: '',
-            });
-            getData();
+            if (res.status === 200 || res.status === 204) {
+                notification.success({
+                    message: 'Success',
+                    description: `Data ${isEditing ? 'edited' : 'saved'} successfully!`
+                });
+                setRegData({
+                    firstName: "",
+                    lastName: "",
+                    phoneNumber: "",
+                    dob: '',
+                    address: '',
+                    gender: '',
+                    email: '',
+                    password: '',
+                    country: null,
+                });
+                navigate('/');
+            }
         } catch (error) {
             console.log('Error saving data:', error.response?.data || error);
         }
     };
 
-    const handleDelete = async (id) => {
-        try {
-            const res = await axios.delete(`${apiUrl}/routeforms/${id}`);
 
-            if (res.status === 204) {
-                setTabledata(prevData => prevData.filter(item => item.id !== id));
 
-                if (editId === id) {
-                    setEditId(null);
-                    setRegData({
-                        firstName: "",
-                        lastName: "",
-                        phoneNumber: "",
-                        dob: "",
-                        address: "",
-                        gender: "",
-                        email: "",
-                        password: "",
-                        country: null,
-                    });
-                }
+    // const handleDelete = async (id) => {
+    //     try {
+    //         const res = await axios.delete(`${apiUrl}/routeforms/${id}`);
 
-                notification.success({
-                    message: 'Success',
-                    description: 'Record deleted successfully',
-                });
-            }
-        } catch (error) {
-            console.log('Error occurred during deletion:', error);
-            notification.error({
-                message: 'Error',
-                description: 'Failed to delete record',
-            });
-        }
+    //         if (res.status === 204) {
+    //             setTabledata(prevData => prevData.filter(item => item.id !== id));
 
-    }
+    //             if (editId === id) {
+    //                 setEditId(null);
+    //                 setRegData({
+    //                     firstName: "",
+    //                     lastName: "",
+    //                     phoneNumber: "",
+    //                     dob: "",
+    //                     address: "",
+    //                     gender: "",
+    //                     email: "",
+    //                     password: "",
+    //                     country: null,
+    //                 });
+    //             }
+
+    //             notification.success({
+    //                 message: 'Success',
+    //                 description: 'Record deleted successfully',
+    //             });
+    //         }
+    //     } catch (error) {
+    //         console.log('Error occurred during deletion:', error);
+    //         notification.error({
+    //             message: 'Error',
+    //             description: 'Failed to delete record',
+    //         });
+    //     }
+
+    // }
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -301,7 +276,7 @@ const RouteForm = () => {
         }
     };
 
-    const handleDetail = () =>{
+    const handleDetail = () => {
         navigate('/routetable');
     }
 
@@ -444,11 +419,11 @@ const RouteForm = () => {
                         </Col>
                         <Col xl={6} md={6} sm={24} xs={24}>
                             <Autocomplete
-                                options={countries}
-                                getOptionLabel={(option) => option?.country || ''}
+                                options={country}
+                                getOptionLabel={(option) => option?.countryName || ''}
                                 onChange={handleCountryChange}
                                 value={regData.country}
-                                isOptionEqualToValue={(option, value) => option.value === value?.value}
+                                isOptionEqualToValue={(option, value) => option.countryName === value?.countryName}
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}

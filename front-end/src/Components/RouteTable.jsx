@@ -23,12 +23,6 @@ const RouteTable = () => {
                     <Tooltip title={<Typography style={{ fontSize: 14 }}>Update Data</Typography>} placement='left-start'>
                         <EyeFilled onClick={() => handleEdit(record.id)} style={{ cursor: 'pointer', fontSize: 15 }} />
                     </Tooltip>
-                    <Tooltip title={<Typography style={{ fontSize: 14 }}>Delete Data</Typography>} placement='right-start'>
-                        <CloseCircleFilled onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(record.id);
-                        }} style={{ cursor: 'pointer', color: '#ff0000', fontSize: 15 }} />
-                    </Tooltip>
                 </Space>)
         },
         {
@@ -104,7 +98,7 @@ const RouteTable = () => {
 
     //to navigate edit function to the main routeForm form
     const handleEdit = (id) =>{
-        navigate(`routeform/${id}`);
+        navigate(`/routeform/${id}`);
     }
 
     useEffect(() => {

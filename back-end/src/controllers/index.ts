@@ -6,3 +6,4 @@ export * from './emailsave.controller';
 export * from './charactersave.controller';
 export * from './twomobile.controller';
 export * from './routeform.controller';
+export * from './country.controller';

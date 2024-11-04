@@ -5,3 +5,4 @@ export * from './emailsave.model';
 export * from './charactersave.model';
 export * from './twomobile.model';
 export * from './routeform.model';
+export * from './country.model';

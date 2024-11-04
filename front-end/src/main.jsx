@@ -13,6 +13,7 @@ createBrowserRouter(
     <Route path='/' element = {<App />}>
       <Route index={true} path='/' element={<RouteForm />} />
       <Route path='/routetable' element={<RouteTable />} />
+      <Route path='/routeform/:id' element={<RouteForm />} />
     </Route>
   )
 )
